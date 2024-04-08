@@ -73,8 +73,34 @@ fun ShoppingListApp() {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            items(sItems) {
-                ShoppingListItem(item = it, onEditClick = {}, {})
+            items(sItems) {item ->
+//                ShoppingListItem(item = it, onEditClick = {}, {})  // 보이는지 확인용
+                if (item.isEditing) {
+                    ShoppingItemEditor(item = item, onEditComplete = { editedName, editedQuantity ->
+                        sItems = sItems.map { it.copy(isEditing = false) }
+
+                        // 현재 수정중인 아이템과 같은 아이템의 세부사항을 업데이트!
+                        val editedItem = sItems.find {
+                            it.id == item.id
+                        }
+
+                        editedItem?.let {
+                            it.name = editedName
+                            it.quantity = editedQuantity
+                        }
+                    })
+                } else {
+                    // 편집중이지 않으면 그냥 그대로 보여주면 됨
+                    ShoppingListItem(
+                        item = item,
+                        onEditClick = { // 편집 버튼을 누르면 편집이 가능해야 하는데, 클릭한 아이템과 목록의 아이디가 같을 경우에만 편집이 활성화 되어야 한다.
+                        sItems = sItems.map {
+                            it.copy(isEditing = (it.id == item.id))
+                        } },
+                        onDeleteClick = { // 삭제
+                        sItems = sItems - item
+                    })
+                }
             }
         }
     }
@@ -101,6 +127,7 @@ fun ShoppingListApp() {
                             sItems = sItems + newItem
                             showDialog = false
                             itemName = ""
+                            itemQuantity = ""
                         }
                     }) {
                         Text(text = "Add")
@@ -149,18 +176,19 @@ fun ShoppingListItem(
           .fillMaxWidth()
           .padding(8.dp)
           .border(
-              border = BorderStroke(2.dp, Color(0XFF018234)),
+              border = BorderStroke(2.dp, Color.White),
               shape = RoundedCornerShape(20)
-          )
+          ),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = item.name, modifier = Modifier.padding(8.dp))
         Text(text = "Qty: ${item.quantity}", modifier = Modifier.padding(8.dp))
 
         Row(modifier = Modifier.padding(8.dp)) {
-            IconButton(onClick = { /*TODO*/ }) {
+            IconButton(onClick = onEditClick) {
                 Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit Button")
             }
-            IconButton(onClick = { /*TODO*/ }) {
+            IconButton(onClick = onDeleteClick) {
                 Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Button")
             }
         }
@@ -179,7 +207,7 @@ fun ShoppingItemEditor(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Gray)
+            .background(Color.White)
             .padding(8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
@@ -190,9 +218,8 @@ fun ShoppingItemEditor(
                 singleLine = true,
                 modifier = Modifier
                     .wrapContentSize()
-                    .padding(8.dp)) {
-
-            }
+                    .padding(8.dp)
+            )
 
             BasicTextField(
                 value = editedQuantity,
@@ -200,15 +227,33 @@ fun ShoppingItemEditor(
                 singleLine = true,
                 modifier = Modifier
                     .wrapContentSize()
-                    .padding(8.dp)) {
-
-            }
+                    .padding(8.dp)
+            )
         }
 
         Button(onClick = {
             isEditing = false
             onEditComplete(editedName, editedQuantity.toIntOrNull() ?: 1)
         }) {
+            Text(text = "save")
         }
     }
 }
+
+// map
+/*
+* val numbers = listOf(1,2,3)
+* val doubled = numbers.map { it * 2 }
+* ------> Result [2,4,6]
+* */
+
+// copy
+/*
+* data class Vase(val color: String, val design: String)
+*
+* fun main() {
+*   val blueRoseVase = Vase(color = "blue", desing = "rose")
+*   val redRoseVase = blueRoseBase.copy()
+*   // 만약 속성을 바꾸고 싶다면 blueRoseBase.copy(color = "red") 이런 방식으로 사용 가능
+* }
+* */
